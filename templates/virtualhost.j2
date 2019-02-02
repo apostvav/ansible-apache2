@@ -1,0 +1,44 @@
+{% if not apache2_bind_on_all_interfaces | default(true) %}
+{% for addr in item.http_address %}
+Listen {{ addr }}:{{ item.http_port | default(80) }}
+{% endfor %}
+{% for addr in item.https_address %}
+Listen {{ addr }}:{{ item.https_port | default(443) }}
+{% endfor %}
+
+{% endif %}
+<VirtualHost {% for addr in item.http_address | default(['*']) %}{{ addr }}:{{ item.http_port | default(80) }}{% if not loop.last %} {% endif %}
+{% endfor %}>
+    ServerAdmin {{ item.serveradmin | default("root@localhost") }}
+    ServerName {{ item.fqdn }}
+{% for srvalias in item.aliases | default([]) %}
+    ServerAlias {{ srvalias }}
+{% endfor %}
+    DocumentRoot {{ item.docroot | default("/var/www/html/{{ item.fqdn }}") }}
+
+    CustomLog ${APACHE_LOG_DIR}/{{ item.logfile | default(item.fqdn) }}_access.log combined
+    ErrorLog  ${APACHE_LOG_DIR}/{{ item.logfile | default(item.fqdn) }}_error.log
+{% if item.redirect_to_https | default(true) %}
+
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/server-status$
+    RewriteRule ^(.*)$ https://{{ item.fqdn }}$1 [R=301,QSA,L]
+{% endif %}
+</VirtualHost>
+
+<VirtualHost {% for addr in item.https_address | default(['*']) %}{{ addr }}:{{ item.https_port | default(443) }}{% if not loop.last %} {% endif %}
+{% endfor %}>
+    ServerAdmin {{ item.serveradmin | default("root@localhost") }}
+    ServerName {{ item.fqdn }}
+{% for vhalias in item.aliases | default([]) %}
+    ServerAlias {{ vhalias }}
+{% endfor %}
+    DocumentRoot {{ item.docroot | default("/var/www/html/{{ item.fqdn }}") }}
+
+    CustomLog ${APACHE_LOG_DIR}/{{ item.logfile | default(item.fqdn) }}_ssl_access.log combined
+    ErrorLog  ${APACHE_LOG_DIR}/{{ item.logfile | default(item.fqdn) }}_ssl_error.log
+
+    SSLEngine on
+    SSLCertificateFile "{{ item.sslcert }}"
+    SSLCertificateKeyFile "{{ item.sslkey }}"
+</VirtualHost>

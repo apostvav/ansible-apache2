@@ -1,0 +1,11 @@
+---
+apache2_bind_on_all_interfaces: yes
+apache2_conf_security_srvtokens: Prod
+apache2_conf_security_srvsignature: 'Off'
+apache2_conf_security_trcenable: 'Off'
+apache2_enable_def_http_vhost: yes
+apache2_enable_def_https_vhost: no
+apache2_modules:
+  - rewrite
+  - ssl
+apache2_virtualhosts: []

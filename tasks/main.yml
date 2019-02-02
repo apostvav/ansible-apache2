@@ -1,0 +1,84 @@
+---
+- name: Install apache2 and php module
+  apt:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - apache2
+    - libapache2-mod-php
+
+- name: Enable apache2 service
+  systemd:
+    name: apache2
+    enabled: yes
+
+- name: Configure ports.conf
+  template:
+    src: ports.j2
+    dest: /etc/apache2/ports.conf
+    backup: yes
+  notify: restart apache2
+
+- name: Apache2 configuration files
+  template:
+    src: security.j2
+    dest: /etc/apache2/conf-available/security.conf
+  notify: reload apache2
+
+- name: Enable apache2 modules
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ apache2_modules }}"
+  notify: restart apache2
+
+- name: Enable default virtual hosts
+  file:
+    src: "../sites-available/{{ item.vhost }}"
+    dest: "/etc/apache2/sites-enabled/{{ item.vhost }}"
+    state: link
+  when: item.enabled
+  loop:
+    - { vhost: '000-default.conf', enabled: "{{ apache2_enable_def_http_vhost }}" }
+    - { vhost: 'default-ssl.conf', enabled: "{{ apache2_enable_def_https_vhost }}" }
+  notify: reload apache2
+
+- name: Disable default virtual hosts
+  file:
+    path: "/etc/apache2/sites-enabled/{{ item.vhost }}"
+    state: absent
+  when: not item.enabled
+  loop:
+    - { vhost: '000-default.conf', enabled: "{{ apache2_enable_def_http_vhost }}" }
+    - { vhost: 'default-ssl.conf', enabled: "{{ apache2_enable_def_https_vhost }}" }
+  notify: reload apache2
+
+- name: Create docroot directories
+  file:
+    path: "{{ item.docroot }}"
+    state: directory
+  loop: "{{ apache2_virtualhosts }}"
+
+- name: Configure virtual hosts
+  template:
+    src: virtualhost.j2
+    dest: "/etc/apache2/sites-available/{{ item.fqdn }}.conf"
+  loop: "{{ apache2_virtualhosts }}"
+  notify: reload apache2
+
+- name: Enable virtual hosts
+  file:
+    src: "../sites-available/{{ item.fqdn }}.conf"
+    dest: "/etc/apache2/sites-enabled/{{ item.fqdn }}.conf"
+    state: link
+  when: item.enabled 
+  loop: "{{ apache2_virtualhosts }}"
+  notify: reload apache2
+
+- name: Disable virtual hosts
+  file:
+    path: "/etc/apache2/sites-enabled/{{ item.fqdn }}.conf"
+    state: absent
+  when: not item.enabled
+  loop: "{{ apache2_virtualhosts }}"
+  notify: reload apache2
