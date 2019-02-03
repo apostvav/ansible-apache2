@@ -41,4 +41,7 @@ Listen {{ addr }}:{{ item.https_port | default(443) }}
     SSLEngine on
     SSLCertificateFile "{{ item.sslcert }}"
     SSLCertificateKeyFile "{{ item.sslkey }}"
+
+    # HSTS (mod_headers is required) (15768000 seconds = 6 months)
+    Header always set Strict-Transport-Security "max-age=15768000"
 </VirtualHost>

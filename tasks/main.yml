@@ -25,6 +25,12 @@
     dest: /etc/apache2/conf-available/security.conf
   notify: reload apache2
 
+- name: Copy ssl module config
+  copy:
+    src: ssl.conf
+    dest: /etc/apache2/mods-available/ssl.conf
+  notify: reload apache2
+
 - name: Enable apache2 modules
   apache2_module:
     name: "{{ item }}"
