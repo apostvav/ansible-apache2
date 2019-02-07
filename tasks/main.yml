@@ -1,11 +1,8 @@
 ---
-- name: Install apache2 and php module
+- name: Install apache2 packages
   apt:
-    name: "{{ item }}"
+    name: "{{ apache2_packages }}"
     state: latest
-  loop:
-    - apache2
-    - libapache2-mod-php
 
 - name: Enable apache2 service
   systemd:

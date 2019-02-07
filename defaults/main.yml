@@ -5,6 +5,9 @@ apache2_conf_security_srvsignature: 'Off'
 apache2_conf_security_trcenable: 'Off'
 apache2_enable_def_http_vhost: yes
 apache2_enable_def_https_vhost: no
+apache2_packages:
+  - apache2
+  - libapache2-mod-php
 apache2_modules:
   - rewrite
   - ssl
